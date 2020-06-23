@@ -204,7 +204,7 @@ public class LeshanBootstrapServerDemo {
         // get http address
         String webAddress = cl.getOptionValue("wh");
         String webPortOption = cl.getOptionValue("wp");
-        int webPort = 8080;
+        int webPort = 8787;
         if (webPortOption != null) {
             webPort = Integer.parseInt(webPortOption);
         }

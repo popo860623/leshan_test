@@ -19,12 +19,18 @@ package org.eclipse.leshan.server.demo;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.BindException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -33,6 +39,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -71,13 +78,15 @@ import org.eclipse.leshan.server.security.EditableSecurityStore;
 import org.eclipse.leshan.server.security.FileSecurityStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.jdom.*;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.util.Pool;
 
 public class LeshanServerDemo {
-
     static {
         // Define a default logback.configurationFile
         String property = System.getProperty("logback.configurationFile");
@@ -297,7 +306,7 @@ public class LeshanServerDemo {
         // get http address
         String webAddress = cl.getOptionValue("wh");
         String webPortOption = cl.getOptionValue("wp");
-        int webPort = 8080;
+        int webPort = 8989;
         if (webPortOption != null) {
             webPort = Integer.parseInt(webPortOption);
         }
@@ -597,5 +606,81 @@ public class LeshanServerDemo {
         lwServer.start();
         server.start();
         LOG.info("Web server started at {}.", server.getURI());
+        
+        //Create Leshan Server on in-cse
+        String resourceName = "test4";
+		Namespace m2m = Namespace.getNamespace("m2m","http://www.onem2m.org/xml/protocols");
+		Document document = new Document();
+		
+		Element ae = new Element("ae",m2m);		
+		document.setRootElement(ae);
+		
+		Element api = new Element("api");
+		Element lbl = new Element("lbl");
+		Element rr = new Element("rr");
+		ae.addNamespaceDeclaration(m2m);
+		ae.setAttribute("rn",resourceName);
+		api.addContent("app-sensor");
+		lbl.addContent("Type/sensor Category/temperature Location/home");
+		rr.addContent("false");
+		
+		ae.addContent(api);
+		ae.addContent(lbl);
+		ae.addContent(rr);
+			
+		XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+		send_request(outputter.outputString(ae));
+        
+        
     }
+    
+	public static void send_request(String data) {
+		try {
+		URL url = new URL("http://127.0.0.1:8181/~/in-cse");
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		
+		connection.setRequestMethod("POST");
+		connection.setDoOutput(true);
+		connection.setDoInput(true);
+		connection.setRequestProperty("Content-Type", "application/xml;ty=2");
+		connection.setRequestProperty("Authorization", "Basic " + Base64.encode("admin:admin".getBytes()));
+		connection.setUseCaches(false);		
+		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(connection.getOutputStream());		
+//		System.out.println(data);
+		outputStreamWriter.write(data);
+		outputStreamWriter.flush();
+		outputStreamWriter.close();
+		connection.connect();
+
+//		System.out.println(connection.getResponseCode());
+		
+		if(connection.getResponseCode() == 201) { //201 表資源成功被創建
+			System.out.println("Connect Success.");
+			InputStream inputStream = connection.getInputStream();
+			String reString = null;
+			try {
+				byte[] data1 = new byte[inputStream.available()];
+				inputStream.read(data1);
+				reString=new String(data1);
+				System.out.println(reString);
+			}catch (Exception e) {
+				// TODO: handle exception
+				e.printStackTrace();
+			}
+		}
+		else {
+			System.out.println("Connect Failed.");
+		}
+		
+		} catch (MalformedURLException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}catch (UnsupportedEncodingException e) {
+			// TODO: handle exception
+			e.printStackTrace();
+		}catch (IOException e) {
+			e.printStackTrace();
+			// TODO: handle exception
+		}
+	}
 }

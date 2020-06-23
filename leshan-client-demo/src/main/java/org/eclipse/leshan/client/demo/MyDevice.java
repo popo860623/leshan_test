@@ -22,7 +22,7 @@ import org.eclipse.leshan.core.response.ReadResponse;
 import org.eclipse.leshan.core.response.WriteResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.eclipse.leshan.client.demo.Shell;
 public class MyDevice extends BaseInstanceEnabler {
 
     private static final Logger LOG = LoggerFactory.getLogger(MyDevice.class);
@@ -33,13 +33,13 @@ public class MyDevice extends BaseInstanceEnabler {
 
     public MyDevice() {
         // notify new date each 5 second
-        Timer timer = new Timer("Device-Current Time");
+        Timer timer = new Timer("Device-Current Time"); 
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 fireResourcesChange(13);
             }
-        }, 5000, 5000);
+        }, 5000, 5000); //在Delay五秒後
     }
 
     @Override
@@ -93,22 +93,34 @@ public class MyDevice extends BaseInstanceEnabler {
         LOG.info("Execute on Device resource /{}/{}/{} {}", getModel().id, getId(), resourceid,
                 withParams != null ? withParams : "");
 
-        if (resourceid == 4) {
-            new Timer("Reboot Lwm2mClient").schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    getLwM2mClient().stop(true);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                    }
-                    getLwM2mClient().start();
-                }
-            }, 500);
+//        if (resourceid == 4) {
+//            new Timer("Reboot Lwm2mClient").schedule(new TimerTask() {
+//                @Override
+//                public void run() {
+//                    getLwM2mClient().stop(true);
+//                    try {
+//                        Thread.sleep(500);
+//                    } catch (InterruptedException e) {
+//                    }
+//                    getLwM2mClient().start();
+//                }
+//            }, 500);
+//        }
+        if(resourceid==4) {
+        	Shell shell = new Shell();
+        	try {
+				shell.SSH_Setting("192.168.234.130", "root", "0000", 22);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
         return ExecuteResponse.success();
     }
-
+    private void reboot() {
+		// TODO Auto-generated method stub
+    	
+	}
     @Override
     public WriteResponse write(ServerIdentity identity, int resourceid, LwM2mResource value) {
         LOG.info("Write on Device resource /{}/{}/{}", getModel().id, getId(), resourceid);

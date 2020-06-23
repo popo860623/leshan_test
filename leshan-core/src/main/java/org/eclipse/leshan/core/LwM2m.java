@@ -21,8 +21,8 @@ public interface LwM2m {
     static final String VERSION = "1.0";
 
     /** The default CoAP port for unsecured CoAP communication */
-    static final int DEFAULT_COAP_PORT = 5683;
+    static final int DEFAULT_COAP_PORT = 5658;
 
     /** The default CoAP port for secure CoAP communication */
-    static final int DEFAULT_COAP_SECURE_PORT = 5684;
+    static final int DEFAULT_COAP_SECURE_PORT = 5654;
 }
